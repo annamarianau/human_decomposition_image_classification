@@ -1,0 +1,9 @@
+*.pyc
+
+ckpt/
+log/
+pretrained/
+
+.ipynb_checkpoints
+
+.idea/
