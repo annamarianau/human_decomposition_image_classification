@@ -1,0 +1,35 @@
+DATASET:
+  root_dataset: "/home/anau/SOD_labeling/experiment_1/stages.csv.20220929"
+  list_train: "./data/training.odgt"
+  list_val: "./data/validation.odgt"
+  num_class: 4  # 1-4, 5-7, 8-9, 10-13
+  img_size: 224
+
+MODEL:
+
+TRAIN:
+  batch_size_per_gpu: 2
+  num_epoch: 30
+  start_epoch: 0
+  epoch_iters: 5000
+  optim: "SGD"
+  lr_encoder: 0.02
+  lr_decoder: 0.02
+  lr_pow: 0.9
+  beta1: 0.9
+  weight_decay: 1e-4
+  deep_sup_scale: 0.4
+  fix_bn: False
+  workers: 16
+  disp_iter: 20
+  seed: 304
+
+VAL:
+  visualize: False
+  checkpoint: "epoch_30.pth"
+
+TEST:
+  checkpoint: "epoch_30.pth"
+  result: "./"
+
+DIR: "ckpt/ade20k-resnet50-upernet"
