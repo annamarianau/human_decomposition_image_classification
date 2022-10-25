@@ -1,11 +1,12 @@
 DATASET:
-  root_dataset: "/home/anau/SOD_labeling/experiment_1/stages.csv.20220929"
+  root_dataset: "./data/stages.csv.20220929.new"
   list_train: "./data/training.odgt"
   list_val: "./data/validation.odgt"
   num_class: 4  # 1-4, 5-7, 8-9, 10-13
   img_size: 224
 
 MODEL:
+  name: "resnet50"
 
 TRAIN:
   batch_size_per_gpu: 2
