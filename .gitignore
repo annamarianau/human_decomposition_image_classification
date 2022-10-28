@@ -1,8 +1,7 @@
 *.pyc
 
-ckpt/
-log/
-pretrained/
+checkpoints/
+data/
 
 .ipynb_checkpoints
 
