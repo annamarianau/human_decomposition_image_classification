@@ -1,10 +1,11 @@
+# To run: python3 train.py ./config/[config_file]
 import os
 import csv
-import time
 import random
 import argparse
 import yaml
 import sys
+from datetime import datetime
 
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -14,7 +15,7 @@ import matplotlib.pyplot as plt
 
 tf.random.set_seed(123)
 
-# build input pipeline 
+# load images and their labels, normalize images and categorize labels
 def load_preprocess_data(config, file_w_paths):
 
     not_found = []
@@ -39,10 +40,11 @@ def load_preprocess_data(config, file_w_paths):
             
             except:
                 not_found.append(row)
-            
+            ''' 
             counter += 1
-            if counter == 64:
+            if counter == 100:
                 break
+            '''
     print('Images not found: ', not_found) 
 
     labels_cat = tf.keras.utils.to_categorical(labels, num_classes=config['DATASET']['num_class'])
@@ -62,64 +64,83 @@ if __name__ == '__main__':
     X_train, y_train = load_preprocess_data(config, config['DATASET']['train_path']) 
     X_val, y_val = load_preprocess_data(config, config['DATASET']['val_path'])
 
-    print(len(X_train), len(y_train), len(X_val), len(y_val))
-
     X_train = np.array(X_train)
     y_train = np.array(y_train)
     X_val = np.array(X_val)
     y_val = np.array(y_val)
 
-    print(X_train.shape, y_train.shape, X_val.shape, y_val.shape)
+    print('X_train.shape:',X_train.shape,'y_train.shape:', y_train.shape)
+    print('X_val.shape:', X_val.shape,'y_val.shape:', y_val.shape)
 
     #sys.exit(0)
-
-    data_augmentation = tf.keras.Sequential([
-    # preprocessing layer which randomly flips images during training.
-    tf.keras.layers.RandomFlip('horizontal_and_vertical'),
-    # preprocessing layer which randomly rotates images during training
-    tf.keras.layers.RandomRotation(0.2)])
     
-    # create the model = base model + new layers
+    if config['TRAIN']['augment'] == True:
+        data_augmentation = tf.keras.Sequential([
+        # preprocessing layer which randomly flips images during training.
+        #tf.keras.layers.RandomFlip('horizontal_and_vertical'),
+        # preprocessing layer which randomly rotates images during training
+        tf.keras.layers.RandomRotation(0.2)])
+    
+    # create base model or load pretrained model
     model_name = config['MODEL']['name'] 
     if model_name == 'resnet50':
         base_model = tf.keras.applications.ResNet50(include_top = False, weights='imagenet', 
                                             input_shape = (config['DATASET']['img_size'], 
                                                            config['DATASET']['img_size'],3))
-    # freeze base model
-    base_model.trainable = False
+    else:
+        model = tf.keras.models.load_model(config['MODEL']['tune_path'])
+    
+
+    # freez layers of base_model or make layers trainable if tuning 
+    if config['TRAIN']['tune'] == False:
+        base_model.trainable = False
+
+        for i, layer in enumerate(base_model.layers):
+            print(i, layer.name,"-", layer.trainable)
+    else:
+        for layer in model.layers:
+            layer.trainable = True
+
+        for i, layer in enumerate(model.layers):
+            print(i, layer.name,"-", layer.trainable)
+
     
     # define model architecture
-    inp = tf.keras.Input((config['DATASET']['img_size'], config['DATASET']['img_size'], 3))
-    x = data_augmentation(inp)
-    x = base_model(x, training=False)
-    x = tf.keras.layers.GlobalAveragePooling2D()(x)
-    #x = tf.keras.layers.Dense(256, activation='relu')(x)
-    x = tf.keras.layers.Dropout(0.3)(x)
-    x = tf.keras.layers.Dense(128, activation='relu')(x)
-    x = tf.keras.layers.Dense(64, activation='relu')(x)
-    out = tf.keras.layers.Dense(config['DATASET']['num_class'], activation='softmax')(x)
+    if config['TRAIN']['tune'] == False:
+        inp = tf.keras.Input((config['DATASET']['img_size'], config['DATASET']['img_size'], 3))
+        if config['TRAIN']['augment'] == True:
+            x = data_augmentation(inp)
+            x = base_model(x, training=False)
+        else:
+            x = base_model(inp, training=False)
+        x = tf.keras.layers.GlobalAveragePooling2D()(x)
+        #x = tf.keras.layers.Dense(256, activation='relu')(x)
+        x = tf.keras.layers.Dropout(0.3)(x)
+        x = tf.keras.layers.Dense(128, activation='relu')(x)
+        x = tf.keras.layers.Dense(64, activation='relu')(x)
+        out = tf.keras.layers.Dense(config['DATASET']['num_class'], activation='softmax')(x)
 
-    model = tf.keras.Model(inp, out)
+        model = tf.keras.Model(inp, out)
+        
+        # compile the model
+        model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=config['TRAIN']['lr']),
+                    loss='categorical_crossentropy',
+                    metrics=['accuracy']) 
     
-    # compile the model
-    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.0001),
-                loss='categorical_crossentropy',
-                metrics=['accuracy']) 
     print(model.summary())
-    
+        
     # create checkpoint and early stopping 
     checkpoint = tf.keras.callbacks.ModelCheckpoint(
-                filepath='checkpoints/' + model_name + '-{epoch:03d}-{accuracy:03f}-{val_accuracy:.5f}',
+                filepath='checkpoints/' + model_name + '_{epoch:03d}-{accuracy:.3f}-{val_accuracy:.3f}.h5',
                 monitor='val_accuracy',
-                verbose=0,
+                verbose=1,
                 save_best_only=True,
                 save_weights_only=True,
-                mode='auto',
                 save_freq='epoch')  
 
     early_stop = tf.keras.callbacks.EarlyStopping(
                 monitor='val_loss', 
-                patience=10,
+                patience=50,
                 mode='min', 
                 verbose=1) 
     
@@ -127,11 +148,11 @@ if __name__ == '__main__':
     # train model
     print('Training model...')
     batch_size = config['TRAIN']['batch_size']
-    num_epoch = 3 #config['TRAIN']['num_epoch']
+    num_epoch = config['TRAIN']['num_epoch']
     train_steps = X_train.shape[0] // batch_size
     val_steps = X_val.shape[0] // batch_size
     
-    print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
+    #print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
     print('num_epochs:', num_epoch, 'batch_size:', batch_size, 'train_steps:', train_steps, 
             'val_steps:', val_steps)
 
@@ -146,11 +167,11 @@ if __name__ == '__main__':
                         callbacks=[checkpoint, early_stop],
                         verbose=1) 
    
- 
-    tf.keras.models.save_model(model,
-                               filepath=config['MODEL']['model_path'])
+    # save model
+    print('Saving model...')
+    model.save(filepath=config['MODEL']['model_path'], save_format="h5")
     
-    sys.exit(0)
+    #sys.exit(0)
     
     # model performance 
     # store results
