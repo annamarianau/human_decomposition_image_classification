@@ -50,10 +50,15 @@ def load_preprocess_data(config, file_w_paths):
                 break
             '''
     print('Images not found: ', not_found) 
+    
+    # get ground truth
+    df = pd.DataFrame(labels, columns = ['gt'])
+    gt = list(df['gt'].values.astype(int))
 
+    # categorize labels
     labels_cat = tf.keras.utils.to_categorical(labels, num_classes=config['DATASET']['num_class'])
     
-    return data, labels_cat
+    return data, labels_cat, gt
 
 
 def eval_metrics(gt, pred):
@@ -84,7 +89,7 @@ if __name__ == '__main__':
 
     # load and preprocess data
     print('Loading and preprocessing data...')
-    X_test, y_test = load_preprocess_data(config, config['DATASET']['test_path']) 
+    X_test, y_test, gt = load_preprocess_data(config, config['DATASET']['test_path']) 
 
     X_test = np.array(X_test)
     y_test = np.array(y_test)
@@ -102,10 +107,7 @@ if __name__ == '__main__':
     
     ## compute confusion matrix and eval metrics   
     print('Computing evaluation metrics...')
-    # save ground truth into a list
-    df = pd.read_csv(config['DATASET']['test_path'], names = ['path', 'gt'], sep = ',')
-    gt = list(df['gt'].values)
-    
+   
     ### Top 1 ###
     print("### Top k=1 ###")
     pred_classes = list(prediction.argmax(axis=-1))

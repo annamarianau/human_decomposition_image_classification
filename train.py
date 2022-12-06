@@ -60,7 +60,7 @@ if __name__ == '__main__':
             config = yaml.safe_load(file)
     
     # load and preprocess data
-    print('Loading and preprocessing data...')
+    print('Loading and preprocessing ', config['DATASET']['data_path'])
     X_train, y_train = load_preprocess_data(config, config['DATASET']['train_path']) 
     X_val, y_val = load_preprocess_data(config, config['DATASET']['val_path'])
 
@@ -87,6 +87,10 @@ if __name__ == '__main__':
         base_model = tf.keras.applications.ResNet50(include_top = False, weights='imagenet', 
                                             input_shape = (config['DATASET']['img_size'], 
                                                            config['DATASET']['img_size'],3))
+    elif model_name == 'inceptionV3':
+        base_model = tf.keras.applications.InceptionV3(include_top = False, weights='imagenet',
+                                                            input_shape = (config['DATASET']['img_size'],
+                                                            config['DATASET']['img_size'],3))
     else:
         model = tf.keras.models.load_model(config['MODEL']['tune_path'])
     
@@ -146,7 +150,7 @@ if __name__ == '__main__':
     
     
     # train model
-    print('Training model...')
+    print('Training ',  config['MODEL']['name'])
     batch_size = config['TRAIN']['batch_size']
     num_epoch = config['TRAIN']['num_epoch']
     train_steps = X_train.shape[0] // batch_size
@@ -168,7 +172,7 @@ if __name__ == '__main__':
                         verbose=1) 
    
     # save model
-    print('Saving model...')
+    print('Saving to ', config['MODEL']['model_path'])
     model.save(filepath=config['MODEL']['model_path'], save_format="h5")
     
     #sys.exit(0)
