@@ -1,4 +1,4 @@
-# this script preprocess the images paths and their labels, and then performs train-val-test split
+# This script preprocess the images paths and their labels. Labels tranformed using different stage of decay ranges.
 import csv
 import re
 import pandas as pd
@@ -35,16 +35,3 @@ with open(directory+filename, 'r') as csvfile:
             output_file.write(path + ',' + str(label) + '\n')
 
 output_file.close()
-
-
-# perform train-val-test split 70%-15%-15% split
-data_df = df = pd.read_csv('./data/' + filename + '.processed', header=None)
-
-X_train, X_test = train_test_split(data_df, test_size=0.3, random_state=1, shuffle=True)
-X_val, X_test = train_test_split(X_test, test_size=0.5, random_state=1, shuffle=True)
-
-print(data_df.shape, X_train.shape, X_val.shape, X_test.shape)
-
-X_train.to_csv('./data/train_70', index=False, header=False)
-X_val.to_csv('./data/val_15', index=False, header=False)
-X_test.to_csv('./data/test_15', index=False, header=False)
