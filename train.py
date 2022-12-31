@@ -91,6 +91,11 @@ if __name__ == '__main__':
         base_model = tf.keras.applications.InceptionV3(include_top = False, weights='imagenet',
                                                             input_shape = (config['DATASET']['img_size'],
                                                             config['DATASET']['img_size'],3))
+    
+    elif model_name == 'inception_resnetV2':
+        base_model = tf.keras.applications.InceptionResNetV2(include_top = False, weights='imagenet',
+                                                            input_shape = (config['DATASET']['img_size'],
+                                                            config['DATASET']['img_size'],3))
     else:
         model = tf.keras.models.load_model(config['MODEL']['tune_path'])
     
