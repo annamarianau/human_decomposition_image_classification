@@ -2,8 +2,10 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-data_path = '/data/anau/SOD_classification/data/propagated_2_2/'
-data_file = '/data/anau/SOD_classification/data/propagated_2_2/stages.csv.20221114_correct.processed.propagated_2_2'
+# modify these paths 
+data_path = '/data/anau/SOD_classification/data/3_classes/propagated_0_0/'
+data_file = '/data/anau/SOD_classification/data/3_classes/propagated_0_0/stages.csv.20221114.3_classes.propagated.merged'
+
 data_df = df = pd.read_csv(data_file, header=None)
 
 # perform train-val-test split 70%-15%-15% split
