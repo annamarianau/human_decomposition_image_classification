@@ -2,6 +2,7 @@
 import os
 import csv
 import random
+import pickle
 import argparse
 import yaml
 import sys
@@ -16,7 +17,7 @@ import matplotlib.pyplot as plt
 tf.random.set_seed(123)
 
 # load images and their labels, normalize images and categorize labels
-def load_preprocess_data(config, file_w_paths):
+def preprocess_data(config, file_w_paths):
 
     not_found = []
     data = []
@@ -25,16 +26,18 @@ def load_preprocess_data(config, file_w_paths):
     with open(file_w_paths, 'r') as csvfile:
         # create csv reader object 
         csv_reader = csv.reader(csvfile, delimiter = ",")
-        # extracting each image one by one
+        # loading and processing each image one by one
         counter = 0
         for row in csv_reader:
-            label = row[1].strip()
+            label = row[1].strip()  # get label 
             try:
+                # load image
                 img = image.load_img(path=row[0].strip(),
                         target_size=(config['DATASET']['img_size'], config['DATASET']['img_size'], 3),
                         grayscale=False)
                 img = image.img_to_array(img)  # convert PIL image instance to Numpy array 
                 img = img/255  # normalize the values to range from 0 to 1
+                
                 data.append(img)
                 labels.append(label)
             
@@ -47,32 +50,57 @@ def load_preprocess_data(config, file_w_paths):
             '''
     print('Images not found: ', not_found) 
 
+    # convert list of integer labels to a binary matrix
     labels_cat = tf.keras.utils.to_categorical(labels, num_classes=config['DATASET']['num_class'])
     
+    # pickle the data
+    f = open(file_w_paths+'.pickle', 'wb')
+    pickle.dump((data, labels_cat), f)
+    f.close()
+
     return data, labels_cat
 
     
 if __name__ == '__main__':
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--config_path', type=str, required=True)
+    parser.add_argument('--process_data', type=str, required=True, help='Does data need to be processed, "y" or "n"')
+    args = parser.parse_args()
+
+    config_path = args.config_path
+    process_data = args.process_data
+
     # load config file
-    config_path = sys.argv[1]
     with open(config_path) as file:
             config = yaml.safe_load(file)
     
-    # load and preprocess data
-    print('Loading and preprocessing ', config['DATASET']['data_path'])
-    X_train, y_train = load_preprocess_data(config, config['DATASET']['train_path']) 
-    X_val, y_val = load_preprocess_data(config, config['DATASET']['val_path'])
+    # load and process data, or just load if it has been previosuly processed and serialized
+    if process_data == 'y':
+        print('Loading and processing data from: ', config['DATASET']['data_path'])
+        X_train, y_train = preprocess_data(config, config['DATASET']['train_path']) 
+        X_val, y_val = preprocess_data(config, config['DATASET']['val_path'])
+    elif process_data == 'n':
+        print('Loading data from: ', config['DATASET']['data_path'])
+        f = open(config['DATASET']['train_path']+'.pickle', 'rb')
+        train_data = pickle.load(f)
+        X_train = train_data[0]
+        y_train = train_data[1]
 
+        f = open(config['DATASET']['val_path']+'.pickle', 'rb')
+        val_data = pickle.load(f)
+        X_val = val_data[0]
+        y_val = val_data[1]
+    
+    # convert to numpy array 
     X_train = np.array(X_train)
     y_train = np.array(y_train)
     X_val = np.array(X_val)
     y_val = np.array(y_val)
-
     print('X_train.shape:',X_train.shape,'y_train.shape:', y_train.shape)
     print('X_val.shape:', X_val.shape,'y_val.shape:', y_val.shape)
 
-    #sys.exit(0)
+    sys.exit(0)
     
     if config['TRAIN']['augment'] == True:
         data_augmentation = tf.keras.Sequential([
@@ -149,7 +177,7 @@ if __name__ == '__main__':
 
     early_stop = tf.keras.callbacks.EarlyStopping(
                 monitor='val_loss', 
-                patience=50,
+                patience=20,
                 mode='min', 
                 verbose=1) 
     
@@ -202,7 +230,7 @@ if __name__ == '__main__':
     plt.legend(loc='lower right')
     plt.ylabel('Accuracy')
     plt.title(f'Training and Validation Accuracy')
-    plt.savefig('plots/'+model_name+'_acc')
+    plt.savefig(config['MODEL']['plots_path']+config['MODEL']['name']+'_acc')
  
     # loss
     plt.figure(figsize=(10, 16))
@@ -213,6 +241,6 @@ if __name__ == '__main__':
     plt.title(f'Training and Validation Loss')
     plt.xlabel('epoch')
     plt.tight_layout(pad=3.0)
-    plt.savefig('plots/'+model_name+'_loss')
+    plt.savefig(config['MODEL']['plots_path']+config['MODEL']['name']+'_loss')
 
 

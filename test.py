@@ -2,6 +2,7 @@
 import os
 import csv
 import random
+import pickle
 import argparse
 import yaml
 import sys
@@ -57,7 +58,12 @@ def load_preprocess_data(config, file_w_paths):
 
     # categorize labels
     labels_cat = tf.keras.utils.to_categorical(labels, num_classes=config['DATASET']['num_class'])
-    
+   
+    # pickle the data
+    f = open(file_w_paths+'.pickle', 'wb')
+    pickle.dump((data, labels_cat, gt), f)
+    f.close()
+
     return data, labels_cat, gt
 
 
@@ -82,36 +88,52 @@ def eval_metrics(gt, pred):
     
 if __name__ == '__main__':
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--config_path', type=str, required=True)
+    parser.add_argument('--process_data', type=str, required=True, help='Does data need to be processed, "y" or "n"')
+    args = parser.parse_args()
+
+    config_path = args.config_path
+    process_data = args.process_data
+    
     # load config file
-    config_path = sys.argv[1]
     with open(config_path) as file:
             config = yaml.safe_load(file)
 
     # load and preprocess data
-    print('Loading and preprocessing data...')
-    X_test, y_test, gt = load_preprocess_data(config, config['DATASET']['test_path']) 
+    if process_data == 'y':
+        print('Loading and processing data from: ', config['DATASET']['test_path'])
+        X_test, y_test, gt = load_preprocess_data(config, config['DATASET']['test_path']) 
+    elif process_data == 'n':
+        print('Loading data from:  ', config['DATASET']['test_path'])
+        f = open(config['DATASET']['test_path']+'.pickle', 'rb')
+        test_data = pickle.load(f)
+        X_test = test_data[0]
+        y_test = test_data[1]
+        gt = test_data[2]
 
+    # convert to numpy array
     X_test = np.array(X_test)
     y_test = np.array(y_test)
-
     print('X_test.shape:',X_test.shape,'y_test.shape:', y_test.shape)
 
     #sys.exit(0)
-    # load model
+   
+   # load model
     print('Loading model and predicting test set...')
     model = load_model(config['MODEL']['model_path'])
     print(model.summary())
     
     # predict test set
-    prediction = model.predict(X_test) # each prediction is list of probabilities per class: [0.1, 0.4, 0.3, 0.2]
-    
+    prediction = model.predict(X_test) # each prediction is list of probabilities per class 
+
     ## compute confusion matrix and eval metrics   
     print('Computing evaluation metrics...')
    
     ### Top 1 ###
     print("### Top k=1 ###")
     pred_classes = list(prediction.argmax(axis=-1))
-    eval_metrics(gt, pred_classes) 
+    eval_metrics(gt, pred_classes)
 
     print()
 
