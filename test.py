@@ -24,6 +24,7 @@ tf.random.set_seed(123)
 def load_preprocess_data(config, file_w_paths):
 
     not_found = []
+    img_paths = []
     data = []
     labels = []
     # reading csv file 
@@ -40,6 +41,8 @@ def load_preprocess_data(config, file_w_paths):
                         grayscale=False)
                 img = image.img_to_array(img)  # convert PIL image instance to Numpy array 
                 img = img/255  # normalize the values to range from 0 to 1
+                
+                img_paths.append(row[0].strip())
                 data.append(img)
                 labels.append(label)
             
@@ -52,19 +55,18 @@ def load_preprocess_data(config, file_w_paths):
             '''
     print('Images not found: ', not_found) 
     
-    # get ground truth
-    df = pd.DataFrame(labels, columns = ['gt'])
-    gt = list(df['gt'].values.astype(int))
+    # save img files and ground truth as dataframe 
+    df = pd.DataFrame(list(zip(img_paths, labels)), columns = ['img','gt'])
 
     # categorize labels
     labels_cat = tf.keras.utils.to_categorical(labels, num_classes=config['DATASET']['num_class'])
    
     # pickle the data
     f = open(file_w_paths+'.pickle', 'wb')
-    pickle.dump((data, labels_cat, gt), f)
+    pickle.dump((data, labels_cat, df), f)
     f.close()
 
-    return data, labels_cat, gt
+    return data, labels_cat, df
 
 
 def eval_metrics(gt, pred):
@@ -103,15 +105,16 @@ if __name__ == '__main__':
     # load and preprocess data
     if process_data == 'y':
         print('Loading and processing data from: ', config['DATASET']['test_path'])
-        X_test, y_test, gt = load_preprocess_data(config, config['DATASET']['test_path']) 
+        X_test, y_test, df_data = load_preprocess_data(config, config['DATASET']['test_path']) 
     elif process_data == 'n':
         print('Loading data from:  ', config['DATASET']['test_path'])
         f = open(config['DATASET']['test_path']+'.pickle', 'rb')
         test_data = pickle.load(f)
         X_test = test_data[0]
         y_test = test_data[1]
-        gt = test_data[2]
-
+        df_data = test_data[2]
+        f.close()
+    
     # convert to numpy array
     X_test = np.array(X_test)
     y_test = np.array(y_test)
@@ -126,13 +129,18 @@ if __name__ == '__main__':
     
     # predict test set
     prediction = model.predict(X_test) # each prediction is list of probabilities per class 
+    df_data['pred'] = prediction.tolist()
 
     ## compute confusion matrix and eval metrics   
     print('Computing evaluation metrics...')
-   
+    
+    # get ground truth 
+    gt = list(df_data['gt'].values.astype(int))
+
     ### Top 1 ###
     print("### Top k=1 ###")
     pred_classes = list(prediction.argmax(axis=-1))
+    df_data['k=1'] = pred_classes
     eval_metrics(gt, pred_classes)
 
     print()
@@ -153,4 +161,11 @@ if __name__ == '__main__':
             if added == False:        
                 pred_classes.append(preds[-1]) # the most confident
         
+        df_data['k='+str(k)] = pred_classes
         eval_metrics(gt, pred_classes)
+    
+    # safe dataframe to csv
+    df_data.to_csv(config['DATASET']['data_path']+'predictions.csv', index=False)
+
+
+
