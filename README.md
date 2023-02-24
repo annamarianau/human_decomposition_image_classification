@@ -23,10 +23,13 @@ NIJ funded project focused on building a vision system to model stage of human d
 ## Getting Started
 
 ### Prerequisites 
-Run the following to install all required standard packages and libraries
-```
-pip install -r requirements.txt
-```
+Some required packages/libraries:
+* matplotlib==3.5.3
+* numpy==1.23.2
+* pandas==1.5.1
+* PyYAML==6.0
+* scikit_learn==1.1.3
+* tensorflow==2.10.0
 
 ### Installation
 Clone the repo
