@@ -48,6 +48,4 @@ python3 train.py --config_path config/[3_or_4]_classes/[model_name]_tune.yaml --
 Evaluate model
 ```
 python3 test.py --config_path config/4_classes/[model_name]_tune.yaml --process_data 'y'
-
-
-
+```
