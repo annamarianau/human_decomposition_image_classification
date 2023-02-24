@@ -37,4 +37,5 @@ Clone the repo
    git clone https://github.com/annamarianau/stage_of_human_decay_classification.git
    ```
    
-  
+## To Run
+
