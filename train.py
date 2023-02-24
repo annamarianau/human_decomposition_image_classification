@@ -1,4 +1,7 @@
-# To run: python3 train.py ./config/[config_file]
+# This script performs two-step transfer learning.
+# To run: 
+# Step 1: python3 train.py ./config/[model_name].yaml
+# Step 2: python3 train.py ./config/[model_name]_tune.yaml
 import os
 import csv
 import random
@@ -7,7 +10,6 @@ import argparse
 import yaml
 import sys
 from datetime import datetime
-
 import numpy as np
 from sklearn.model_selection import train_test_split
 import tensorflow as tf
@@ -67,7 +69,6 @@ if __name__ == '__main__':
     parser.add_argument('--config_path', type=str, required=True)
     parser.add_argument('--process_data', type=str, required=True, help='Does data need to be processed, "y" or "n"')
     args = parser.parse_args()
-
     config_path = args.config_path
     process_data = args.process_data
 
@@ -75,7 +76,7 @@ if __name__ == '__main__':
     with open(config_path) as file:
             config = yaml.safe_load(file)
     
-    # load and process data, or just load if it has been previosuly processed and serialized
+    # load and process data, or just load if it has been previously processed and serialized
     if process_data == 'y':
         print('Loading and processing data from: ', config['DATASET']['data_path'])
         X_train, y_train = preprocess_data(config, config['DATASET']['train_path']) 
@@ -99,9 +100,8 @@ if __name__ == '__main__':
     y_val = np.array(y_val)
     print('X_train.shape:',X_train.shape,'y_train.shape:', y_train.shape)
     print('X_val.shape:', X_val.shape,'y_val.shape:', y_val.shape)
-
-    sys.exit(0)
     
+    # create data augmentation layer
     if config['TRAIN']['augment'] == True:
         data_augmentation = tf.keras.Sequential([
         # preprocessing layer which randomly flips images during training.
@@ -109,7 +109,7 @@ if __name__ == '__main__':
         # preprocessing layer which randomly rotates images during training
         tf.keras.layers.RandomRotation(0.2)])
     
-    # create base model or load pretrained model
+    # create base model or load pretrained model from step 1 to be tuned
     model_name = config['MODEL']['name'] 
     if model_name == 'resnet50':
         base_model = tf.keras.applications.ResNet50(include_top = False, weights='imagenet', 
@@ -124,25 +124,36 @@ if __name__ == '__main__':
         base_model = tf.keras.applications.InceptionResNetV2(include_top = False, weights='imagenet',
                                                             input_shape = (config['DATASET']['img_size'],
                                                             config['DATASET']['img_size'],3))
+    elif model_name == 'xception':
+        base_model = tf.keras.applications.xception.Xception(include_top = False, weights='imagenet',
+                                                            input_shape = (config['DATASET']['img_size'],
+                                                            config['DATASET']['img_size'],3))
+    elif model_name == 'vgg16':
+        base_model = tf.keras.applications.VGG16(include_top=False, weights="imagenet",
+                                                  input_shape=(config['DATASET']['img_size'],
+                                                            config['DATASET']['img_size'],3)) 
+    elif model_name == 'efficientnetB0':
+        base_model = tf.keras.applications.EfficientNetB0(include_top=False, weights="imagenet",
+                                                        input_shape=(config['DATASET']['img_size'],
+                                                             config['DATASET']['img_size'],3))
+    # if 2nd step of two-step transfer learning process
     else:
         model = tf.keras.models.load_model(config['MODEL']['tune_path'])
     
 
-    # freez layers of base_model or make layers trainable if tuning 
+    # freeze layers of base_model (step 1) or make layers trainable for tuning (step 2) 
     if config['TRAIN']['tune'] == False:
         base_model.trainable = False
-
         for i, layer in enumerate(base_model.layers):
-            print(i, layer.name,"-", layer.trainable)
+            #print(i, layer.name,"-", layer.trainable)
     else:
         for layer in model.layers:
             layer.trainable = True
-
         for i, layer in enumerate(model.layers):
             print(i, layer.name,"-", layer.trainable)
 
     
-    # define model architecture
+    # define model architecture if step 1
     if config['TRAIN']['tune'] == False:
         inp = tf.keras.Input((config['DATASET']['img_size'], config['DATASET']['img_size'], 3))
         if config['TRAIN']['augment'] == True:
@@ -156,11 +167,16 @@ if __name__ == '__main__':
         x = tf.keras.layers.Dense(128, activation='relu')(x)
         x = tf.keras.layers.Dense(64, activation='relu')(x)
         out = tf.keras.layers.Dense(config['DATASET']['num_class'], activation='softmax')(x)
-
         model = tf.keras.Model(inp, out)
         
         # compile the model
-        model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=config['TRAIN']['lr']),
+        if config['TRAIN']['optimizer'] == "SGD":
+            model.compile(optimizer=tf.keras.optimizers.SGD(learning_rate=0.02, momentum=0.9,
+                    weight_decay=0.0001),
+                    loss='categorical_crossentropy',
+                    metrics=['accuracy'])
+        else:
+            model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=config['TRAIN']['lr']),
                     loss='categorical_crossentropy',
                     metrics=['accuracy']) 
     
@@ -177,7 +193,7 @@ if __name__ == '__main__':
 
     early_stop = tf.keras.callbacks.EarlyStopping(
                 monitor='val_loss', 
-                patience=20,
+                patience=10,
                 mode='min', 
                 verbose=1) 
     
@@ -208,17 +224,14 @@ if __name__ == '__main__':
     print('Saving to ', config['MODEL']['model_path'])
     model.save(filepath=config['MODEL']['model_path'], save_format="h5")
     
-    #sys.exit(0)
     
     # model performance 
-    # store results
     acc = history.history['accuracy']
     val_acc = history.history['val_accuracy']
     loss = history.history['loss']
     val_loss = history.history['val_loss']
 
-    # plot results
-    # accuracy
+    # plot: train/val accuracy 
     plt.figure(figsize=(10, 16))
     plt.rcParams['figure.figsize'] = [16, 9]
     plt.rcParams['font.size'] = 14
@@ -232,7 +245,7 @@ if __name__ == '__main__':
     plt.title(f'Training and Validation Accuracy')
     plt.savefig(config['MODEL']['plots_path']+config['MODEL']['name']+'_acc')
  
-    # loss
+    # plot: train/val loss
     plt.figure(figsize=(10, 16))
     plt.plot(loss, label='Training Loss')
     plt.plot(val_loss, label='Validation Loss')

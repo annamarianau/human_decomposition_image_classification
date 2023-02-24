@@ -1,3 +1,4 @@
+# Script evaluates trained model on the test data. 
 # To run: python3 test.py ./config/[config_file]
 import os
 import csv
@@ -7,7 +8,6 @@ import argparse
 import yaml
 import sys
 from datetime import datetime
-
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -17,6 +17,7 @@ import tensorflow as tf
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras.models import load_model
 import matplotlib.pyplot as plt
+from sklearn.metrics import f1_score
 
 tf.random.set_seed(123)
 
@@ -76,25 +77,36 @@ def eval_metrics(gt, pred):
     TP = CM.diagonal()
     FN = np.sum(CM, axis = 1) - TP
     FP = np.sum(CM, axis = 0) - TP
-
-    AP = TP/(TP + FP)
-    print("AP: ", AP)
-    mAP = np.mean(AP)
-    print("mAP: ", mAP)
-
-    recall = TP/(TP + FN)
-    print("recall: ", recall)
-    mrecall = np.mean(recall)
-    print("mrecall: ", mrecall)
-
     
+    P = []
+    for i in range(len(TP)):
+        if TP[i] != 0:
+            prec = TP[i]/(TP[i] + FP[i])
+            P.append(prec)
+        else:
+            P.append(0)
+    print("Precision: ", P)
+    avgP = np.mean(P)
+    
+    R = []
+    for i in range(len(TP)):
+        if TP[i] != 0:
+            prec = TP[i]/(TP[i] + FN[i])
+            R.append(prec)
+        else:
+            R.append(0)
+    print("recall: ", R)
+    avgR = np.mean(R)   
+    maF1 = f1_score(gt, pred, average='macro')
+    print("maF1: ", maF1)
+    
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--config_path', type=str, required=True)
     parser.add_argument('--process_data', type=str, required=True, help='Does data need to be processed, "y" or "n"')
     args = parser.parse_args()
-
     config_path = args.config_path
     process_data = args.process_data
     
@@ -102,7 +114,7 @@ if __name__ == '__main__':
     with open(config_path) as file:
             config = yaml.safe_load(file)
 
-    # load and preprocess data
+    # load and process data, or just load if it has been previously processed and serialized
     if process_data == 'y':
         print('Loading and processing data from: ', config['DATASET']['test_path'])
         X_test, y_test, df_data = load_preprocess_data(config, config['DATASET']['test_path']) 
@@ -120,9 +132,7 @@ if __name__ == '__main__':
     y_test = np.array(y_test)
     print('X_test.shape:',X_test.shape,'y_test.shape:', y_test.shape)
 
-    #sys.exit(0)
-   
-   # load model
+   # load trained model
     print('Loading model and predicting test set...')
     model = load_model(config['MODEL']['model_path'])
     print(model.summary())
@@ -130,7 +140,7 @@ if __name__ == '__main__':
     # predict test set
     prediction = model.predict(X_test) # each prediction is list of probabilities per class 
     df_data['pred'] = prediction.tolist()
-
+    
     ## compute confusion matrix and eval metrics   
     print('Computing evaluation metrics...')
     
@@ -144,8 +154,9 @@ if __name__ == '__main__':
     eval_metrics(gt, pred_classes)
 
     print()
-
-    ### Top k ###
+    
+    '''
+    ### Top k>=1 ###
     pred_classes = []
     k_ls = [2]
     for k in k_ls:
@@ -163,9 +174,10 @@ if __name__ == '__main__':
         
         df_data['k='+str(k)] = pred_classes
         eval_metrics(gt, pred_classes)
+    '''
     
-    # safe dataframe to csv
-    df_data.to_csv(config['DATASET']['data_path']+'predictions.csv', index=False)
+    # safe dataframe with columns: img_path,softmax_class_probs,ground_truth,prediction
+    #df_data.to_csv(config['MODEL']['name']+'_predictions.csv', index=False)
 
 
 
