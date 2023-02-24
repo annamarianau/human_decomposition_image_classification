@@ -1,3 +1,5 @@
+#  Script generates img embeddings for 02_base_LPA.py
+# To run: python3 gen_embeddings.py (modify path files below if needed)
 import cv2
 import numpy as np
 from tensorflow.keras.models import load_model
@@ -20,9 +22,10 @@ model2 = tf.keras.Model(inputs = model.input, outputs = x)
 # import SOD-labeled data
 df_w_labels = pd.read_csv('data/4_classes/stages.csv.20230201.annotated.multiple.4_classes', header=None, delimiter=',')
 df_w_labels.columns = ['path', 'label']
+
 # import unlabeled data
-n = 74763 #number of records in file
-s = 30000 #desired sample size
+n = 74763 # number of records in file
+s = 30000 # desired sample size
 skip = sorted(random.sample(range(n),n-s))
 df_no_labels = pd.read_csv('data/clusters.csv.multiple', delimiter=',', skiprows=skip, usecols=[0])
 df_no_labels.columns = ['path']
@@ -70,7 +73,7 @@ def gen_embeddings(df, has_labels=False):
 
 
 # generate embeddings 
-# get embeddings for df_w_labels
+# get embeddings for df_w_labels (labeled img)
 paths_ls1, embeddings_ls1, labels_ls1 = gen_embeddings(df_w_labels, has_labels=True)
 print(len(paths_ls1), len(embeddings_ls1), len(labels_ls1))
 with open('/data/anau/SOD_classification/data/4_classes/null_hypoth/paths_ls1', 'wb') as f:
@@ -80,7 +83,7 @@ with open('/data/anau/SOD_classification/data/4_classes/null_hypoth/embeddings_l
 with open('/data/anau/SOD_classification/data/4_classes/null_hypoth/labels_ls1', 'wb') as f:
     pickle.dump(labels_ls1, f)
 
-# get embeddings for df_w_labels
+# get embeddings for df_w_labels (unlabeled img)
 paths_ls2, embeddings_ls2, labels_ls2 = gen_embeddings(df_no_labels, has_labels=False)
 print(len(paths_ls2), len(embeddings_ls2), len(labels_ls2))
 with open('/data/anau/SOD_classification/data/4_classes/null_hypoth/paths_ls2', 'wb') as f:
