@@ -22,14 +22,8 @@ NIJ funded project focused on building a vision system to model stage of human d
 
 ## Getting Started
 
-### Prerequisites 
-Some required packages/libraries:
-* matplotlib==3.5.3
-* numpy==1.23.2
-* pandas==1.5.1
-* PyYAML==6.0
-* scikit_learn==1.1.3
-* tensorflow==2.10.0
+### Prerequisites
+Python3 and Tensorflow 2.0 are required. See requirements.txt for additional required packages/libraries/modules. 
 
 ### Installation
 Clone the repo
@@ -38,4 +32,18 @@ Clone the repo
    ```
    
 ## To Run
+Data preparation and label propagation
+```
+python3 01_label_preprocessing.py 
+python3 02_base_LPA.py OR 02_exact_label_propagation.sh  # if 02_base_LPA.py, run gen_embeddings.py first
+03_train_val_test_split.py
+```
+Train model - Two-step transfer learning
+python3 train.py --config_path config/[3_or_4]_classes/[model_name].yaml --process_data 'y'. # step 1
+python3 train.py --config_path config/[3_or_4]_classes/[model_name]_tune.yaml --process_data 'n'  # step 2
+
+Evaluate model
+python3 test.py --config_path config/4_classes/[model_name]_tune.yaml --process_data 'y'
+
+
 
