@@ -22,11 +22,8 @@ NIJ funded project focused on building a vision system to model stage of human d
 
 ## Getting Started
 
-### Prerequisites 
-Run the following to install all required standard packages and libraries
-```
-pip install -r requirements.txt
-```
+### Prerequisites
+Python3 and Tensorflow 2.0 are required. See requirements.txt for additional required packages/libraries/modules. 
 
 ### Installation
 Clone the repo
@@ -34,4 +31,21 @@ Clone the repo
    git clone https://github.com/annamarianau/stage_of_human_decay_classification.git
    ```
    
-  
+## To Run
+Data preparation and label propagation
+```
+python3 01_label_preprocessing.py 
+python3 02_base_LPA.py OR 02_exact_label_propagation.sh  # if 02_base_LPA.py, run gen_embeddings.py first
+03_train_val_test_split.py
+```
+
+Train model - Two-step transfer learning
+```
+python3 train.py --config_path config/[3_or_4]_classes/[model_name].yaml --process_data 'y'. # step 1
+python3 train.py --config_path config/[3_or_4]_classes/[model_name]_tune.yaml --process_data 'n'  # step 2
+```
+
+Evaluate model
+```
+python3 test.py --config_path config/4_classes/[model_name]_tune.yaml --process_data 'y'
+```
