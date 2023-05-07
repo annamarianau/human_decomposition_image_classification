@@ -1,0 +1,22 @@
+DATASET:
+  data_path: "./data/4_classes/"
+  train_path: "./data/4_classes/propagated_0_0/train_70" 
+  val_path: "./data/4_classes/propagated_0_0/val_15"  
+  test_path: "./data/testing/stages.csv.20230227"
+  num_class: 4
+  img_size: 299
+
+MODEL:
+  name: "xception_tune"
+  model_path: "./models/4_classes/propagated_0_0/xception_best_testing"
+  plots_path: "./plots/4_classes/"
+  tune_path: "./models/4_classes/propagated_0_0/xception_best"
+
+TRAIN:
+  batch_size: 32
+  num_epoch: 500
+  augment: True
+  tune: True 
+  optimizer: "Adam"
+  lr: 0.0001
+  es: 500

@@ -1,0 +1,21 @@
+DATASET:
+  data_path: "./data/3_classes/"
+  train_path: "./data/3_classes/propagated_0_0/train_70" 
+  val_path: "./data/3_classes/propagated_0_0/val_15"  
+  test_path: "./data/3_classes/propagated_0_0/test_15"
+  num_class: 3  # 0:1-4, 1:5-9, 3:10-13
+  img_size: 299
+
+MODEL:
+  name: "inceptionV3_tune"
+  model_path: "./models/3_classes/propagated_0_0/inceptionV3_best_tuned"
+  plots_path: "./plots/3_classes/"
+  tune_path: "./models/3_classes/propagated_0_0/inceptionV3_best"
+
+TRAIN:
+  batch_size: 32
+  num_epoch: 500
+  augment: True
+  tune: True
+  optimizer: "Adam"
+  lr: 0.0001

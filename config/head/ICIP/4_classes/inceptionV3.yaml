@@ -1,0 +1,20 @@
+DATASET:
+  data_path: "./data/4_classes/null_hypoth/" 
+  train_path: "./data/4_classes/null_hypoth/train_k_5_mult_70" 
+  val_path: "./data/4_classes/null_hypoth/val_k_5_mult_15"  
+  test_path: "./data/4_classes/null_hypoth/test_k_5_mult_15"
+  num_class: 4  # 0:1-4, 1:5-7, 2:8-9, 3:10-13
+  img_size: 299
+
+MODEL:
+  name: "inceptionV3"
+  model_path: "./models/4_classes/null_hypoth/inceptionV3_lpa_k_5"
+  plots_path: "./plots/4_classes/null_hypoth/"
+
+TRAIN:
+  batch_size: 32
+  num_epoch: 500
+  augment: True
+  tune: False 
+  optimizer: "Adam"
+  lr: 0.001

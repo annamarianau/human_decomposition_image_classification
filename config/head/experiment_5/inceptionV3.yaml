@@ -1,0 +1,23 @@
+DATASET:
+  data_path: "./data/experiment_5/prop_0_0" 
+  train_path: "./data/experiment_5/prop_0_0/train_80" 
+  val_path: "./data/experiment_5/prop_0_0/val_10"  
+  test_path: "./data/experiment_5/prop_0_0/test_10"
+  num_class: 4  # 0:1-4, 1:5-7, 2:8-9, 3:10-13
+  img_size: 299
+
+MODEL:
+  name: "inceptionV3"
+  ckpt_path: "./ckpt/experiment_5/"
+  model_path: "./models/experiment_5/inceptionV3_prop_0_0"
+  plots_path: "./plots/experiment_5/"
+
+TRAIN:
+  batch_size: 32
+  num_epoch: 500
+  augment: True
+  tune: False 
+  optimizer: "Adam"
+  lr: 0.001
+  lr_tune: 0.0001
+  es: 15

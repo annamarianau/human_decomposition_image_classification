@@ -1,0 +1,21 @@
+DATASET:
+  data_path: "./data/4_classes/null_hypoth/"
+  train_path: "./data/4_classes/null_hypoth/train_k_5_mult_70"
+  val_path: "./data/4_classes/null_hypoth/val_k_5_mult_15"
+  test_path: "./data/4_classes/null_hypoth/test_k_5_mult_15"
+  num_class: 4 
+  img_size: 224
+
+MODEL:
+  name: "vgg16_tune"
+  model_path: "./models/4_classes/null_hypoth/vgg16_230209_tuned"
+  plots_path: "./plots/4_classes/null_hypoth"
+  tune_path: "./models/4_classes/null_hypoth/vgg16_230209"
+
+TRAIN:
+  batch_size: 32
+  num_epoch: 500
+  augment: True
+  tune: True
+  optimizer: "Adam"
+  lr: 0.0001

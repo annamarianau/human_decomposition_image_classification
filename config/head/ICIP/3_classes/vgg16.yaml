@@ -1,0 +1,20 @@
+DATASET:
+  data_path: "./data/3_classes/null_hypoth/"
+  train_path: "./data/3_classes/null_hypoth/train_70"
+  val_path: "./data/3_classes/null_hypoth/val_15"
+  test_path: "./data/3_classes/test_15"
+  num_class: 3  # 0:1-4, 1:5-9, 3:10-13
+  img_size: 224
+
+MODEL:
+  name: "vgg16"
+  model_path: "./models/3_classes/null_hypoth/vgg16_230208"
+  plots_path: "./plots/3_classes/"
+
+TRAIN:
+  batch_size: 32
+  num_epoch: 500
+  augment: True
+  tune: False 
+  optimizer: "Adam"
+  lr: 0.001

@@ -1,0 +1,22 @@
+DATASET:
+  data_path: "./data/torso/"
+  train_path: "./data/torso/train_80" 
+  val_path: "./data/torso/val_10"  
+  test_path: "./data/torso/test_10"
+  num_class: 4
+  img_size: 299
+
+MODEL:
+  ckpt_path: "./ckpt/torso/"
+  model_path: "./models/torso/"
+  plots_path: "./plots/torso/"
+  preds_path:  "./predictions/torso/"
+
+TRAIN:
+  batch_size: 32
+  num_epoch: 200
+  augment: True
+  optimizer: "Adam"
+  lr: 0.001
+  lr_tune: 0.0001 
+  es: 20
