@@ -1,25 +1,21 @@
 # Script evaluates trained model on the test data. 
-# To run: python3 test.py ./config/[config_file]
 import os
 import csv
-import random
 import pickle
 import argparse
 import yaml
 import sys
-from datetime import datetime
+
 import numpy as np
+np.random.seed(1)
 import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import confusion_matrix
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import confusion_matrix, accuracy_score, f1_score
 import tensorflow as tf
+tf.random.set_seed(1)
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras.models import load_model
 import matplotlib.pyplot as plt
-from sklearn.metrics import f1_score
 
-tf.random.set_seed(123)
 
 # load images and their labels, normalize images and categorize labels
 def load_preprocess_data(config, file_w_paths):
@@ -105,9 +101,13 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--config_path', type=str, required=True)
-    parser.add_argument('--process_data', type=str, required=True, help='Does data need to be processed, "y" or "n"')
+    parser.add_argument('--model', type=str, required=True)
+    parser.add_argument('--uid', type=str, required=True)
+    parser.add_argument('--process_data', type=int, required=True)
     args = parser.parse_args()
     config_path = args.config_path
+    model_name = args.model
+    model_uid = args.uid
     process_data = args.process_data
     
     # load config file
@@ -115,10 +115,10 @@ if __name__ == '__main__':
             config = yaml.safe_load(file)
 
     # load and process data, or just load if it has been previously processed and serialized
-    if process_data == 'y':
+    if process_data == 1:
         print('Loading and processing data from: ', config['DATASET']['test_path'])
         X_test, y_test, df_data = load_preprocess_data(config, config['DATASET']['test_path']) 
-    elif process_data == 'n':
+    elif process_data == 0:
         print('Loading data from:  ', config['DATASET']['test_path'])
         f = open(config['DATASET']['test_path']+'.pickle', 'rb')
         test_data = pickle.load(f)
@@ -134,7 +134,7 @@ if __name__ == '__main__':
 
    # load trained model
     print('Loading model and predicting test set...')
-    model = load_model(config['MODEL']['model_path'])
+    model = load_model(config['MODEL']['model_path']+model_name+model_uid)
     print(model.summary())
     
     # predict test set
@@ -177,7 +177,7 @@ if __name__ == '__main__':
     '''
     
     # safe dataframe with columns: img_path,softmax_class_probs,ground_truth,prediction
-    #df_data.to_csv(config['MODEL']['name']+'_predictions.csv', index=False)
+    df_data.to_csv(config['MODEL']['preds_path']+model_name+model_uid, index=False)
 
 
 

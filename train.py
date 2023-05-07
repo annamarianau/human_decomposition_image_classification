@@ -1,22 +1,18 @@
 # This script performs two-step transfer learning.
-# To run: 
-# Step 1: python3 train.py ./config/[model_name].yaml
-# Step 2: python3 train.py ./config/[model_name]_tune.yaml
 import os
 import csv
-import random
 import pickle
 import argparse
 import yaml
 import sys
-from datetime import datetime
+
 import numpy as np
-from sklearn.model_selection import train_test_split
+np.random.seed(1)
 import tensorflow as tf
+tf.random.set_seed(1)
 from tensorflow.keras.preprocessing import image
 import matplotlib.pyplot as plt
 
-tf.random.set_seed(123)
 
 # load images and their labels, normalize images and categorize labels
 def preprocess_data(config, file_w_paths):
@@ -67,9 +63,13 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--config_path', type=str, required=True)
-    parser.add_argument('--process_data', type=str, required=True, help='Does data need to be processed, "y" or "n"')
+    parser.add_argument('--model', type=str, required=True)
+    parser.add_argument('--uid', type=str, required=True)
+    parser.add_argument('--process_data', type=int, required=True)
     args = parser.parse_args()
     config_path = args.config_path
+    model_name = args.model
+    model_uid = args.uid
     process_data = args.process_data
 
     # load config file
@@ -77,11 +77,11 @@ if __name__ == '__main__':
             config = yaml.safe_load(file)
     
     # load and process data, or just load if it has been previously processed and serialized
-    if process_data == 'y':
+    if process_data == 1:
         print('########### Loading and processing data from:', config['DATASET']['data_path'], '###########')
         X_train, y_train = preprocess_data(config, config['DATASET']['train_path']) 
         X_val, y_val = preprocess_data(config, config['DATASET']['val_path'])
-    elif process_data == 'n':
+    elif process_data == 0:
         print('########### Loading data from: ', config['DATASET']['data_path'], '###########')
         f = open(config['DATASET']['train_path']+'.pickle', 'rb')
         train_data = pickle.load(f)
@@ -111,7 +111,6 @@ if __name__ == '__main__':
         tf.keras.layers.RandomRotation(0.2)])
     
     # create base model or load pretrained model from step 1 to be tuned
-    model_name = config['MODEL']['name'] 
     if 'resnet50'in model_name:
         base_model = tf.keras.applications.ResNet50(include_top = False, weights='imagenet', 
                                             input_shape = (config['DATASET']['img_size'], 
@@ -171,7 +170,7 @@ if __name__ == '__main__':
 
     # create checkpoint and early stopping 
     checkpoint = tf.keras.callbacks.ModelCheckpoint(
-                filepath=config['MODEL']['ckpt_path'] + model_name + '_{epoch:03d}-{accuracy:.3f}-{val_accuracy:.3f}',
+                filepath=config['MODEL']['ckpt_path']+model_name+model_uid+'_{epoch:03d}-{accuracy:.3f}-{val_accuracy:.3f}',
                 monitor='val_accuracy',
                 verbose=1,
                 save_best_only=True,
@@ -187,7 +186,7 @@ if __name__ == '__main__':
     print(model.summary())
     
     # train model
-    print('########### Training',  config['MODEL']['name'], '###########')
+    print('########### Training', model_name, '###########')
     batch_size = config['TRAIN']['batch_size']
     num_epoch = config['TRAIN']['num_epoch']
     train_steps = X_train.shape[0] // batch_size
@@ -238,8 +237,9 @@ if __name__ == '__main__':
                         verbose=1)  # model performance 
 
     # save model
-    print('########### Saving to:', config['MODEL']['model_path'], '###########')
-    model2.save(filepath=config['MODEL']['model_path'], save_format="h5")
+    saving_path = config['MODEL']['model_path']+model_name+model_uid
+    print('########### Saving to:', saving_path, '###########')
+    model2.save(filepath=saving_path, save_format="h5")
 
     '''  
     acc = history.history['accuracy']
@@ -259,7 +259,7 @@ if __name__ == '__main__':
     plt.legend(loc='lower right')
     plt.ylabel('Accuracy')
     plt.title(f'Training and Validation Accuracy')
-    plt.savefig(config['MODEL']['plots_path']+config['MODEL']['name']+'_acc')
+    plt.savefig(config['MODEL']['plots_path']+model_name+model_uid+'_acc')
  
     # plot: train/val loss
     plt.figure(figsize=(10, 16))
@@ -270,6 +270,6 @@ if __name__ == '__main__':
     plt.title(f'Training and Validation Loss')
     plt.xlabel('epoch')
     plt.tight_layout(pad=3.0)
-    plt.savefig(config['MODEL']['plots_path']+config['MODEL']['name']+'_loss')
+    plt.savefig(config['MODEL']['plots_path']+model_name+model_uid++'_loss')
     '''
 
