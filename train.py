@@ -63,12 +63,10 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--config_path', type=str, required=True)
-    parser.add_argument('--model', type=str, required=True)
     parser.add_argument('--uid', type=str, required=True)
     parser.add_argument('--process_data', type=int, required=True)
     args = parser.parse_args()
     config_path = args.config_path
-    model_name = args.model
     model_uid = args.uid
     process_data = args.process_data
 
@@ -111,28 +109,28 @@ if __name__ == '__main__':
         tf.keras.layers.RandomRotation(0.2)])
     
     # create base model or load pretrained model from step 1 to be tuned
-    if 'resnet50'in model_name:
+    if 'resnet50'in config['MODEL']['name']:
         base_model = tf.keras.applications.ResNet50(include_top = False, weights='imagenet', 
                                             input_shape = (config['DATASET']['img_size'], 
                                                            config['DATASET']['img_size'],3))
-    elif 'inceptionV3' in model_name:
+    elif 'inceptionV3' in config['MODEL']['name']:
         base_model = tf.keras.applications.InceptionV3(include_top = False, weights='imagenet',
                                                             input_shape = (config['DATASET']['img_size'],
                                                             config['DATASET']['img_size'],3))
     
-    elif 'inception_resnetV2' in model_name:
+    elif 'inception_resnetV2' in config['MODEL']['name']:
         base_model = tf.keras.applications.InceptionResNetV2(include_top = False, weights='imagenet',
                                                             input_shape = (config['DATASET']['img_size'],
                                                             config['DATASET']['img_size'],3))
-    elif 'xception' in model_name:
+    elif 'xception' in config['MODEL']['name']:
         base_model = tf.keras.applications.xception.Xception(include_top = False, weights='imagenet',
                                                             input_shape = (config['DATASET']['img_size'],
                                                             config['DATASET']['img_size'],3))
-    elif 'vgg16' in model_name:
+    elif 'vgg16' in config['MODEL']['name']:
         base_model = tf.keras.applications.VGG16(include_top=False, weights="imagenet",
                                                   input_shape=(config['DATASET']['img_size'],
                                                             config['DATASET']['img_size'],3)) 
-    elif 'efficientnetB0' in model_name:
+    elif 'efficientnetB0' in config['MODEL']['name']:
         base_model = tf.keras.applications.EfficientNetB0(include_top=False, weights="imagenet",
                                                         input_shape=(config['DATASET']['img_size'],
                                                              config['DATASET']['img_size'],3))
@@ -170,7 +168,7 @@ if __name__ == '__main__':
 
     # create checkpoint and early stopping 
     checkpoint = tf.keras.callbacks.ModelCheckpoint(
-                filepath=config['MODEL']['ckpt_path']+model_name+model_uid+'_{epoch:03d}-{accuracy:.3f}-{val_accuracy:.3f}',
+                filepath=config['MODEL']['ckpt_path']+config['MODEL']['name']+'_'+model_uid+'_{epoch:03d}-{accuracy:.3f}-{val_accuracy:.3f}',
                 monitor='val_accuracy',
                 verbose=1,
                 save_best_only=True,
@@ -186,7 +184,7 @@ if __name__ == '__main__':
     print(model.summary())
     
     # train model
-    print('########### Training', model_name, '###########')
+    print('########### Training', config['MODEL']['name'], '###########')
     batch_size = config['TRAIN']['batch_size']
     num_epoch = config['TRAIN']['num_epoch']
     train_steps = X_train.shape[0] // batch_size
@@ -237,7 +235,7 @@ if __name__ == '__main__':
                         verbose=1)  # model performance 
 
     # save model
-    saving_path = config['MODEL']['model_path']+model_name+model_uid
+    saving_path = config['MODEL']['model_path']+config['MODEL']['name']+'_'+model_uid
     print('########### Saving to:', saving_path, '###########')
     model2.save(filepath=saving_path, save_format="h5")
 
@@ -259,7 +257,7 @@ if __name__ == '__main__':
     plt.legend(loc='lower right')
     plt.ylabel('Accuracy')
     plt.title(f'Training and Validation Accuracy')
-    plt.savefig(config['MODEL']['plots_path']+model_name+model_uid+'_acc')
+    plt.savefig(config['MODEL']['plots_path']+config['MODEL']['name']+'_'+model_uid+'_acc')
  
     # plot: train/val loss
     plt.figure(figsize=(10, 16))
@@ -270,6 +268,6 @@ if __name__ == '__main__':
     plt.title(f'Training and Validation Loss')
     plt.xlabel('epoch')
     plt.tight_layout(pad=3.0)
-    plt.savefig(config['MODEL']['plots_path']+model_name+model_uid++'_loss')
+    plt.savefig(config['MODEL']['plots_path']+config['MODEL']['name']+'_'+model_uid+'_loss')
     '''
 

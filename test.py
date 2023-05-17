@@ -101,12 +101,10 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--config_path', type=str, required=True)
-    parser.add_argument('--model', type=str, required=True)
     parser.add_argument('--uid', type=str, required=True)
     parser.add_argument('--process_data', type=int, required=True)
     args = parser.parse_args()
     config_path = args.config_path
-    model_name = args.model
     model_uid = args.uid
     process_data = args.process_data
     
@@ -134,7 +132,8 @@ if __name__ == '__main__':
 
    # load trained model
     print('Loading model and predicting test set...')
-    model = load_model(config['MODEL']['model_path']+model_name+model_uid)
+    model = load_model(config['MODEL']['model_path']+config['MODEL']['name'])
+    #model = keras.models.load_model('best_model')
     print(model.summary())
     
     # predict test set
@@ -177,7 +176,9 @@ if __name__ == '__main__':
     '''
     
     # safe dataframe with columns: img_path,softmax_class_probs,ground_truth,prediction
-    df_data.to_csv(config['MODEL']['preds_path']+model_name+model_uid, index=False)
+    df_data['gt'] = df_data['gt'].astype('int')+1
+    df_data['k=1'] = df_data['k=1'].astype('int')+1
+    df_data.to_csv(config['MODEL']['preds_path']+config['MODEL']['name']+'_'+model_uid, index=False)
 
 
 
