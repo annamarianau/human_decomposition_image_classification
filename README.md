@@ -1,4 +1,4 @@
-# stage_of_human_decay_classification_leveraging
+# stage_of_human_decay_classification
 
 NIJ funded project focused on building a vision system to model stage of human decay leveraging a photographic collection documenting human decay.
 
