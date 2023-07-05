@@ -41,10 +41,10 @@ python3 02_base_LPA.py OR 02_exact_label_propagation.sh  # if 02_base_LPA.py, ru
 
 Train model - Two-step transfer learning
 ```
-python3 train.py --config_path config/[folder_name]/[model_name].yaml --process_data [0 for no and 1 for yes] 
+python3 train.py --config_path config/[folder_name]/[model_name].yaml --uid [unique for model, e.g., date] --process_data [0 for no and 1 for yes] 
 ```
 
 Evaluate model
 ```
-python3 test.py --config_path config/[folder_name]/[model_name]_tune.yaml --process_data [0 for no and 1 for yes] 
+python3 test.py --config_path config/[folder_name]/[model_name]_tune.yaml --uid [unique for model, e.g., date] --process_data [0 for no and 1 for yes] 
 ```
