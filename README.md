@@ -34,9 +34,9 @@ Clone the repo
 ## To Run
 Data preparation and label propagation
 ```
-python3 01_label_preprocessing.py 
-python3 02_base_LPA.py OR 02_exact_label_propagation.sh  # if 02_base_LPA.py, run gen_embeddings.py first
-03_train_val_test_split.py
+python3 01_label_preprocessing.py --input_file [path to input file] --output_file [path to output file]
+python3 02_base_LPA.py OR 02_exact_label_propagation.sh  # if 02_base_LPA.py, run gen_embeddings.py first (optional)
+python3 03_train_val_test_split.py --input_file [path to input file] --output_dir [path to output directory]
 ```
 
 Train model - Two-step transfer learning
