@@ -1,6 +1,6 @@
-# stage_of_human_decay_classification
+# human_decomposition_image_classification
 
-NIJ funded project focused on building a vision system to model stage of human decay leveraging a photographic collection documenting human decay.
+NIJ funded project focused on building a vision system to classify human decomposition leveraging a photographic collection documenting human decay.
 
 ### Directory structure/info
 ```
